@@ -1,0 +1,28 @@
+<manifest
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	package="me.anon.grow.updater"
+>
+	<uses-permission android:name="android.permission.INTERNET" />
+
+	<application
+		android:allowBackup="true"
+		android:supportsRtl="true"
+		android:icon="@mipmap/ic_launcher"
+	>
+		<receiver android:name=".CheckUpdateReceiver" android:exported="true" android:enabled="true">
+			<intent-filter>
+				<action android:name="me.anon.grow.ACTION_UPDATER" />
+			</intent-filter>
+		</receiver>
+
+		<activity android:name="me.anon.grow.updater.ConfigureActivity" android:theme="@style/AppTheme">
+			<intent-filter>
+				<category android:name="me.anon.grow.ACTION_UPDATER" />
+				<action android:name="me.anon.grow.ADDON_CONFIGURATION" />
+			</intent-filter>
+		</activity>
+
+		<meta-data android:name="me.anon.grow.ADDON_NAME" android:value="Updater" />
+		<meta-data android:name="me.anon.grow.ADDON_VERSION" android:value="${versionName}" />
+	</application>
+</manifest>
