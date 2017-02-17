@@ -1,10 +1,16 @@
 package me.anon.grow.updater;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * // TODO: Add class description
@@ -43,7 +49,29 @@ public class ConfigureActivity extends AppCompatActivity
 		{
 			if (preference.getKey().equals("about"))
 			{
-				
+				String readme = "";
+
+				try
+				{
+					InputStream stream = new BufferedInputStream(getActivity().getAssets().open("readme.html"), 8192);
+					int len = 0;
+					byte[] buffer = new byte[8192];
+
+					while ((len = stream.read(buffer)) != -1)
+					{
+						readme += new String(buffer, 0, len);
+					}
+				}
+				catch (IOException e)
+				{
+					e.printStackTrace();
+				}
+
+				new AlertDialog.Builder(getActivity())
+					.setMessage(Html.fromHtml(readme))
+					.setPositiveButton("Close", null)
+					.show();
+
 				return true;
 			}
 
