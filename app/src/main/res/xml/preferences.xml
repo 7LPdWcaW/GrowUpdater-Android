@@ -6,7 +6,7 @@
 	<PreferenceCategory
 		android:title="About"
 	>
-		<ListPreference
+		<Preference
 			android:key="about"
 			android:title="About"
 			android:summary="About the app"
