@@ -11,7 +11,9 @@ android {
 		targetSdkVersion 25
 
 		versionCode 1
-		versionName "1.0"
+		versionName "v1.0"
+
+		manifestPlaceholders = [versionName: versionName]
 	}
 
 	buildTypes {
