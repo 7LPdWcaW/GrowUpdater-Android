@@ -26,7 +26,7 @@ public class ConfigureActivity extends AppCompatActivity
 		}
 	}
 
-	public static class ConfigureFragment extends PreferenceFragment implements Preference.OnPreferenceChangeListener
+	public static class ConfigureFragment extends PreferenceFragment implements Preference.OnPreferenceClickListener
 	{
 		private static final int REQUEST_STORAGE_PERMISSION = 0x1;
 
@@ -35,10 +35,18 @@ public class ConfigureActivity extends AppCompatActivity
 			super.onCreate(savedInstanceState);
 
 			addPreferencesFromResource(R.xml.preferences);
+
+			findPreference("about").setOnPreferenceClickListener(this);
 		}
 
-		@Override public boolean onPreferenceChange(Preference preference, Object value)
+		@Override public boolean onPreferenceClick(Preference preference)
 		{
+			if (preference.getKey().equals("about"))
+			{
+				
+				return true;
+			}
+
 			return false;
 		}
 	}

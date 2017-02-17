@@ -3,5 +3,13 @@
 <PreferenceScreen
 	xmlns:android="http://schemas.android.com/apk/res/android"
 >
-
+	<PreferenceCategory
+		android:title="About"
+	>
+		<ListPreference
+			android:key="about"
+			android:title="About"
+			android:summary="About the app"
+		/>
+	</PreferenceCategory>
 </PreferenceScreen>
