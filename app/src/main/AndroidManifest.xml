@@ -9,8 +9,15 @@
 		android:supportsRtl="true"
 		android:icon="@mipmap/ic_launcher"
 	>
+		<receiver android:name=".CheckUpdateReceiver" android:exported="true" android:enabled="true">
+			<intent-filter>
+				<action android:name="me.anon.grow.ACTION_UPDATER" />
+			</intent-filter>
+		</receiver>
+
 		<activity android:name="me.anon.grow.updater.ConfigureActivity" android:theme="@style/AppTheme">
 			<intent-filter>
+				<category android:name="me.anon.grow.ACTION_UPDATER" />
 				<action android:name="me.anon.grow.ADDON_CONFIGURATION" />
 			</intent-filter>
 		</activity>
