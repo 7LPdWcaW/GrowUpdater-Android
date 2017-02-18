@@ -100,6 +100,7 @@ public class ConfigureActivity extends AppCompatActivity
 			{
 				CheckUpdateReceiver.checkCallback = this;
 				Intent broadcast = new Intent(getActivity(), CheckUpdateReceiver.class);
+				broadcast.putExtra("force", true);
 				getActivity().sendBroadcast(broadcast);
 			}
 
@@ -112,7 +113,7 @@ public class ConfigureActivity extends AppCompatActivity
 			super.onDestroy();
 		}
 
-		@Override public void onUpdateChecked(boolean downloaded)
+		@Override public void onUpdateChecked()
 		{
 			onCreate(null);
 		}

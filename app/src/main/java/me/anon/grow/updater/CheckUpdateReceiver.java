@@ -10,6 +10,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.preference.PreferenceManager;
+import android.widget.Toast;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,7 +41,7 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 
 	public static interface CheckCallbackListener
 	{
-		public void onUpdateChecked(boolean downloaded);
+		public void onUpdateChecked();
 	}
 
 	/**
@@ -151,102 +153,120 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 
 	@Override public void onReceive(final Context context, Intent intent)
 	{
-		PreferenceManager.getDefaultSharedPreferences(context).edit()
-			.putLong("last_checked", System.currentTimeMillis())
-			.apply();
-
-		try
+		long lastChecked = PreferenceManager.getDefaultSharedPreferences(context).getLong("last_checked", 0);
+		long oneDay = TimeUnit.DAYS.toMillis(1);
+		final boolean force = intent.getExtras().containsKey("force");
+		if (System.currentTimeMillis() - lastChecked > oneDay || force)
 		{
-			PackageManager packageManager = context.getPackageManager();
-			PackageInfo packageInfo = packageManager.getPackageInfo("me.anon.grow", 0);
+			PreferenceManager.getDefaultSharedPreferences(context).edit()
+				.putLong("last_checked", System.currentTimeMillis())
+				.apply();
 
-			final int versionCode = packageInfo.versionCode;
-			final String versionName = packageInfo.versionName;
-			final Version currentVersion = Version.parse(versionName);
-
-			if (currentVersion == null)
+			if (checkCallback != null)
 			{
-				return;
+				checkCallback.onUpdateChecked();
 			}
 
-			ApplicationInfo ai = packageManager.getApplicationInfo("me.anon.grow", PackageManager.GET_META_DATA);
-
-			if (ai.metaData != null)
+			try
 			{
-				currentVersion.appType = ai.metaData.getString("me.anon.grow.APP_TYPE", "original");
-			}
+				PackageManager packageManager = context.getPackageManager();
+				PackageInfo packageInfo = packageManager.getPackageInfo("me.anon.grow", 0);
 
-			AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-			asyncHttpClient.setUserAgent("Android/7LPdWcaW:GrowUpdater");
-			asyncHttpClient.get("https://api.github.com/repos/7LPdWcaW/GrowTracker-Android/releases", new TextHttpResponseHandler()
-			{
-				@Override public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable)
+				final int versionCode = packageInfo.versionCode;
+				final String versionName = packageInfo.versionName;
+				final Version currentVersion = Version.parse(versionName);
+
+				if (currentVersion == null)
 				{
-
+					return;
 				}
 
-				@Override public void onSuccess(int statusCode, Header[] headers, String responseString)
+				ApplicationInfo ai = packageManager.getApplicationInfo("me.anon.grow", PackageManager.GET_META_DATA);
+
+				if (ai.metaData != null)
 				{
-					JsonArray jsonArray = (JsonArray)new JsonParser().parse(responseString);
+					currentVersion.appType = ai.metaData.getString("me.anon.grow.APP_TYPE", "original");
+				}
 
-					ArrayList<Version> releases = new ArrayList<Version>();
-
-					for (JsonElement element : jsonArray)
+				AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+				asyncHttpClient.setUserAgent("Android/7LPdWcaW:GrowUpdater");
+				asyncHttpClient.get("https://api.github.com/repos/7LPdWcaW/GrowTracker-Android/releases", new TextHttpResponseHandler()
+				{
+					@Override public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable)
 					{
-						JsonObject jsonObject = element.getAsJsonObject();
-						Version releaseVersion = Version.parse(jsonObject.get("name").getAsString());
 
-						if (releaseVersion != null)
+					}
+
+					@Override public void onSuccess(int statusCode, Header[] headers, String responseString)
+					{
+						JsonArray jsonArray = (JsonArray)new JsonParser().parse(responseString);
+
+						ArrayList<Version> releases = new ArrayList<Version>();
+
+						for (JsonElement element : jsonArray)
 						{
-							try
-							{
-								Date date = new SimpleDateFormat("yyyy-MM-dd").parse(jsonObject.get("published_at").getAsString());
-								releaseVersion.releaseDate = date.getTime();
-							}
-							catch (ParseException e)
-							{
-								e.printStackTrace();
-							}
+							JsonObject jsonObject = element.getAsJsonObject();
+							Version releaseVersion = Version.parse(jsonObject.get("name").getAsString());
 
-							releaseVersion.releaseNotes = jsonObject.get("body").getAsString();
-
-							for (JsonElement assets : jsonObject.get("assets").getAsJsonArray())
+							if (releaseVersion != null)
 							{
-								JsonObject assetObject = assets.getAsJsonObject();
-
-								if (assetObject.get("content_type").getAsString().equals("application/vnd.android.package-archive"))
+								try
 								{
-									releaseVersion.downloadUrl = assetObject.get("browser_download_url").getAsString();
-									releaseVersion.appType = assetObject.get("name").getAsString().contains("discrete") ? "discrete" : "original";
+									Date date = new SimpleDateFormat("yyyy-MM-dd").parse(jsonObject.get("published_at").getAsString());
+									releaseVersion.releaseDate = date.getTime();
 								}
+								catch (ParseException e)
+								{
+									e.printStackTrace();
+								}
+
+								releaseVersion.releaseNotes = jsonObject.get("body").getAsString();
+
+								for (JsonElement assets : jsonObject.get("assets").getAsJsonArray())
+								{
+									JsonObject assetObject = assets.getAsJsonObject();
+
+									if (assetObject.get("content_type").getAsString().equals("application/vnd.android.package-archive"))
+									{
+										releaseVersion.downloadUrl = assetObject.get("browser_download_url").getAsString();
+										releaseVersion.appType = assetObject.get("name").getAsString().contains("discrete") ? "discrete" : "original";
+									}
+								}
+
+								releases.add(releaseVersion);
 							}
+						}
 
-							releases.add(releaseVersion);
+						Collections.sort(releases, new Comparator<Version>()
+						{
+							@Override public int compare(Version o1, Version o2)
+							{
+								return o1.equals(o2) ? 0 : (o1.newerThan(o2) ? 1 : -1);
+							}
+						});
+
+						if (releases.get(0).newerThan(currentVersion))
+						{
+							// send notification
+							if (context != null)
+							{
+								sendUpdateNotification(context, releases.get(0));
+							}
+						}
+						else
+						{
+							if (force)
+							{
+								Toast.makeText(context, "Already up-to-date", Toast.LENGTH_SHORT).show();
+							}
 						}
 					}
-
-					Collections.sort(releases, new Comparator<Version>()
-					{
-						@Override public int compare(Version o1, Version o2)
-						{
-							return o1.equals(o2) ? 0 : (o1.newerThan(o2) ? 1 : -1);
-						}
-					});
-
-					if (releases.get(0).newerThan(currentVersion))
-					{
-						// send notification
-						if (context != null)
-						{
-							sendUpdateNotification(context, releases.get(0));
-						}
-					}
-				}
-			});
-		}
-		catch (PackageManager.NameNotFoundException e)
-		{
-			e.printStackTrace();
+				});
+			}
+			catch (PackageManager.NameNotFoundException e)
+			{
+				e.printStackTrace();
+			}
 		}
 	}
 
