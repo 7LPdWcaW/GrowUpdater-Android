@@ -3,7 +3,28 @@ package me.anon.grow.updater;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.preference.PreferenceManager;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.TextHttpResponseHandler;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import cz.msebera.android.httpclient.Header;
 
 /**
  * Receiver called when Grow Tracker is opened. Used for checking for updates
@@ -17,12 +38,185 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 		public void onUpdateChecked(boolean downloaded);
 	}
 
+	/**
+	 * Static struct for versions and comparisons
+	 */
+	private static class Version
+	{
+		public int major;
+		public int minor;
+		public int hot;
+		public String type = "";
+		public int iteration = 0;
+		public String downloadUrl = "";
+		public String releaseNotes = "";
+		public long releaseDate = 0;
+
+		public String appType = "original";
+
+		public static Version parse(String version)
+		{
+			Pattern regex = Pattern.compile("v?([0-9]{1,2})(.?)([0-9]{1,2})((.?)([0-9]{1,2}))?(-([a-zA-Z]+)([0-9]+))?");
+			Matcher matcher = regex.matcher(version);
+
+			while (matcher.find())
+			{
+				String major = matcher.group(1);
+				String minor = matcher.group(3);
+				String hot = matcher.group(6);
+				String type = matcher.group(8);
+				String iteration = matcher.group(9);
+
+				try
+				{
+					Version v = new Version();
+					v.major = major == null ? 0 : Integer.parseInt(major);
+					v.minor = minor == null ? 0 : Integer.parseInt(minor);
+					v.hot = hot == null ? 0 : Integer.parseInt(hot);
+
+					v.type = type == null ? "" : type;
+					v.iteration = iteration == null ? 0 : Integer.parseInt(iteration);
+
+					return v;
+				}
+				catch (Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+
+			return null;
+		}
+
+		public boolean newerThan(Version otherVersion)
+		{
+			if (this.major > otherVersion.major) return true;
+			if (this.minor > otherVersion.minor) return true;
+			if (this.hot > otherVersion.hot) return true;
+
+			if (this.type.equals("") && !otherVersion.type.equals("")) return false;
+
+			if (this.type.equals(otherVersion.type))
+			{
+				// check iteration
+				if (this.iteration > otherVersion.iteration) return true;
+			}
+
+			if (this.type.equals("beta") && otherVersion.type.equals("alpha")) return true;
+
+			return false;
+		}
+
+		@Override public boolean equals(Object o)
+		{
+			if (this == o) return true;
+			if (!(o instanceof Version)) return false;
+
+			Version version = (Version)o;
+
+			if (major != version.major) return false;
+			if (minor != version.minor) return false;
+			if (hot != version.hot) return false;
+			if (iteration != version.iteration) return false;
+
+			return type != null ? type.equals(version.type) : version.type == null;
+		}
+	}
+
 	@Override public void onReceive(Context context, Intent intent)
 	{
 		PreferenceManager.getDefaultSharedPreferences(context).edit()
 			.putLong("last_checked", System.currentTimeMillis())
 			.apply();
 
+		try
+		{
+			PackageManager packageManager = context.getPackageManager();
+			PackageInfo packageInfo = packageManager.getPackageInfo("me.anon.grow", 0);
 
+			final int versionCode = packageInfo.versionCode;
+			final String versionName = packageInfo.versionName;
+			final Version currentVersion = Version.parse(versionName);
+
+			if (currentVersion == null)
+			{
+				return;
+			}
+
+			ApplicationInfo ai = packageManager.getApplicationInfo("me.anon.grow", PackageManager.GET_META_DATA);
+
+			if (ai.metaData != null)
+			{
+				currentVersion.appType = ai.metaData.getString("me.anon.grow.APP_TYPE", "original");
+			}
+
+			AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+			asyncHttpClient.setUserAgent("Android/7LPdWcaW:GrowUpdater");
+			asyncHttpClient.get("https://api.github.com/repos/7LPdWcaW/GrowTracker-Android/releases", new TextHttpResponseHandler()
+			{
+				@Override public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable)
+				{
+
+				}
+
+				@Override public void onSuccess(int statusCode, Header[] headers, String responseString)
+				{
+					JsonArray jsonArray = (JsonArray)new JsonParser().parse(responseString);
+
+					ArrayList<Version> releases = new ArrayList<Version>();
+
+					for (JsonElement element : jsonArray)
+					{
+						JsonObject jsonObject = element.getAsJsonObject();
+						Version releaseVersion = Version.parse(jsonObject.get("name").getAsString());
+
+						if (releaseVersion != null)
+						{
+							try
+							{
+								Date date = new SimpleDateFormat("yyyy-MM-dd").parse(jsonObject.get("published_at").getAsString());
+								releaseVersion.releaseDate = date.getTime();
+							}
+							catch (ParseException e)
+							{
+								e.printStackTrace();
+							}
+
+							releaseVersion.releaseNotes = jsonObject.get("body").getAsString();
+
+							for (JsonElement assets : jsonObject.get("assets").getAsJsonArray())
+							{
+								JsonObject assetObject = assets.getAsJsonObject();
+
+								if (assetObject.get("content_type").equals("application/vnd.android.package-archive"))
+								{
+									releaseVersion.downloadUrl = assetObject.get("browser_download_url").getAsString();
+									releaseVersion.appType = assetObject.get("name").getAsString().contains("discrete") ? "discrete" : "original";
+								}
+							}
+
+							releases.add(releaseVersion);
+						}
+					}
+
+					Collections.sort(releases, new Comparator<Version>()
+					{
+						@Override public int compare(Version o1, Version o2)
+						{
+							return o1.equals(o2) ? 0 : (o1.newerThan(o2) ? 1 : -1);
+						}
+					});
+
+					if (releases.get(0).newerThan(currentVersion))
+					{
+						// send notification
+					}
+				}
+			});
+		}
+		catch (PackageManager.NameNotFoundException e)
+		{
+			e.printStackTrace();
+		}
 	}
 }
