@@ -11,6 +11,12 @@
 			android:title="Last checked"
 			android:summary="Tap to check now"
 		/>
+
+		<CheckBoxPreference
+			android:key="experimental"
+			android:title="Opt-in for experimental builds"
+			android:summary="Allow for alpha and beta builds to be downloaded"
+		/>
 	</PreferenceCategory>
 
 	<PreferenceCategory

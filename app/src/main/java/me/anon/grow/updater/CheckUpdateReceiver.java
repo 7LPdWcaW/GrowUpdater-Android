@@ -32,6 +32,8 @@ import java.util.regex.Pattern;
 
 import cz.msebera.android.httpclient.Header;
 
+import static android.preference.PreferenceManager.getDefaultSharedPreferences;
+
 /**
  * Receiver called when Grow Tracker is opened. Used for checking for updates
  */
@@ -153,12 +155,12 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 
 	@Override public void onReceive(final Context context, Intent intent)
 	{
-		long lastChecked = PreferenceManager.getDefaultSharedPreferences(context).getLong("last_checked", 0);
+		long lastChecked = getDefaultSharedPreferences(context).getLong("last_checked", 0);
 		long oneDay = TimeUnit.DAYS.toMillis(1);
 		final boolean force = intent.getExtras().containsKey("force");
 		if (System.currentTimeMillis() - lastChecked > oneDay || force)
 		{
-			PreferenceManager.getDefaultSharedPreferences(context).edit()
+			getDefaultSharedPreferences(context).edit()
 				.putLong("last_checked", System.currentTimeMillis())
 				.apply();
 
@@ -245,7 +247,21 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 							}
 						});
 
-						if (releases.get(0).newerThan(currentVersion))
+						Version latest = releases.get(0);
+						Version latestStable = releases.get(0);
+
+						for (Version release : releases)
+						{
+							if (release.type.equals(""))
+							{
+								latestStable = release;
+								break;
+							}
+						}
+
+						boolean experimental = PreferenceManager.getDefaultSharedPreferences(context).getBoolean("experimental", false);
+						if ((!latest.type.equals("") && experimental && latest.newerThan(currentVersion))
+						|| latestStable.newerThan(currentVersion))
 						{
 							// send notification
 							if (context != null)
