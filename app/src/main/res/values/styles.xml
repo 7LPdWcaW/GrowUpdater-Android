@@ -2,10 +2,13 @@
 
 <resources>
 	<style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-		<item name="android:colorPrimary">#48BEFF</item>
-		<item name="android:colorPrimaryDark">#358ebf</item>
+		<item name="android:colorPrimary">#F4773A</item>
+		<item name="android:colorPrimaryDark">#ca5c26</item>
+		<item name="android:colorSecondary">#ca5c26</item>
+		<item name="android:colorAccent">#ca5c26</item>
 
-		<item name="colorPrimary">#48BEFF</item>
-		<item name="colorPrimaryDark">#358ebf</item>
+		<item name="colorPrimary">#F4773A</item>
+		<item name="colorPrimaryDark">#ca5c26</item>
+		<item name="colorAccent">#ca5c26</item>
 	</style>
 </resources>
