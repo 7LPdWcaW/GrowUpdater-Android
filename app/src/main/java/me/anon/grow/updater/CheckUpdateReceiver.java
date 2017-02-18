@@ -266,7 +266,7 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 							// send notification
 							if (context != null)
 							{
-								sendUpdateNotification(context, releases.get(0));
+								sendUpdateNotification(context, experimental ? latest : latestStable);
 							}
 						}
 						else
