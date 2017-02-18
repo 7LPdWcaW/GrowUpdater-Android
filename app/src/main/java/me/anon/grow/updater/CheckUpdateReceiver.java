@@ -18,6 +18,7 @@ import com.google.gson.JsonParser;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.TextHttpResponseHandler;
 
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -44,7 +45,7 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 	/**
 	 * Static struct for versions and comparisons
 	 */
-	public static class Version
+	public static class Version implements Serializable
 	{
 		public int major;
 		public int minor;
@@ -229,7 +230,10 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 
 	private void sendUpdateNotification(Context context, Version release)
 	{
-		PendingIntent downloadIntent = PendingIntent.getActivity(context, 0, new Intent(), 0);
+		Intent downloadActivity = new Intent(context, DownloadActivity.class);
+		downloadActivity.putExtra("version", release);
+
+		PendingIntent downloadIntent = PendingIntent.getActivity(context, 0, downloadActivity, 0);
 		PendingIntent remindIntent = PendingIntent.getActivity(context, 0, new Intent(), 0);
 
 		Notification notification = new Notification.Builder(context)

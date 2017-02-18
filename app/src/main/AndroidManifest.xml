@@ -22,6 +22,8 @@
 			</intent-filter>
 		</activity>
 
+		<activity android:name=".DownloadActivity" android:theme="@style/AppTheme" />
+
 		<meta-data android:name="me.anon.grow.ADDON_NAME" android:value="Updater" />
 		<meta-data android:name="me.anon.grow.ADDON_VERSION" android:value="${versionName}" />
 	</application>
