@@ -41,7 +41,7 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 	/**
 	 * Static struct for versions and comparisons
 	 */
-	private static class Version
+	public static class Version
 	{
 		public int major;
 		public int minor;
@@ -94,7 +94,7 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 			if (this.minor > otherVersion.minor) return true;
 			if (this.hot > otherVersion.hot) return true;
 
-			if (this.type.equals("") && !otherVersion.type.equals("")) return false;
+			if (this.type.equals("") && !otherVersion.type.equals("")) return true;
 
 			if (this.type.equals(otherVersion.type))
 			{
