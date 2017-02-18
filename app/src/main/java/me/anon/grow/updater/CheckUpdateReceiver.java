@@ -111,6 +111,28 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 			return false;
 		}
 
+		@Override public String toString()
+		{
+			String additional = "";
+
+			if (hot > 0)
+			{
+				additional += "." + hot;
+			}
+
+			if (!type.equals(""))
+			{
+				additional += "-" + type;
+
+				if (iteration > 0)
+				{
+					additional += iteration;
+				}
+			}
+
+			return major + "." + minor + additional;
+		}
+
 		@Override public boolean equals(Object o)
 		{
 			if (this == o) return true;
