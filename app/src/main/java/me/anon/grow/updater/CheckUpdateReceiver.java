@@ -276,7 +276,6 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 		downloadActivity.putExtra("version", release);
 
 		PendingIntent downloadIntent = PendingIntent.getActivity(context, 0, downloadActivity, PendingIntent.FLAG_CANCEL_CURRENT);
-		PendingIntent remindIntent = PendingIntent.getActivity(context, 0, new Intent(), PendingIntent.FLAG_CANCEL_CURRENT);
 
 		Notification notification = new Notification.Builder(context)
 			.setContentTitle("There is an update available")
@@ -285,8 +284,8 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 				.bigText("A newer version of GrowTracker is available to download"))
 			.setSmallIcon(R.mipmap.ic_notification)
 			.addAction(0, "Download & update", downloadIntent)
-			.addAction(0, "Remind me later", remindIntent)
 			.setContentIntent(downloadIntent)
+			.setAutoCancel(true)
 		.build();
 
 		NotificationManager notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
