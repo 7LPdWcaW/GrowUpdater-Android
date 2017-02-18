@@ -1,5 +1,8 @@
 package me.anon.grow.updater;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -123,7 +126,7 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 		}
 	}
 
-	@Override public void onReceive(Context context, Intent intent)
+	@Override public void onReceive(final Context context, Intent intent)
 	{
 		PreferenceManager.getDefaultSharedPreferences(context).edit()
 			.putLong("last_checked", System.currentTimeMillis())
@@ -210,6 +213,10 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 					if (releases.get(0).newerThan(currentVersion))
 					{
 						// send notification
+						if (context != null)
+						{
+							sendUpdateNotification(context, releases.get(0));
+						}
 					}
 				}
 			});
@@ -218,5 +225,26 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 		{
 			e.printStackTrace();
 		}
+	}
+
+	private void sendUpdateNotification(Context context, Version release)
+	{
+		PendingIntent downloadIntent = PendingIntent.getActivity(context, 0, new Intent(), 0);
+		PendingIntent remindIntent = PendingIntent.getActivity(context, 0, new Intent(), 0);
+
+		Notification notification = new Notification.Builder(context)
+			.setContentTitle("There is an update available")
+			.setContentText("A newer version of GrowTracker is available to download")
+			.setStyle(new Notification.BigTextStyle()
+				.bigText("A newer version of GrowTracker is available to download")
+				.setSummaryText("A newer version of GrowTracker is available to download"))
+			.setSmallIcon(R.mipmap.ic_notification)
+			.addAction(0, "Download & update", downloadIntent)
+			.addAction(0, "Remind me later", remindIntent)
+			.setContentIntent(downloadIntent)
+		.build();
+
+		NotificationManager notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+		notificationManager.notify(1, notification);
 	}
 }
