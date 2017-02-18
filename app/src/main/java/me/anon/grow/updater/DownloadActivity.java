@@ -64,7 +64,7 @@ public class DownloadActivity extends AppCompatActivity
 		((TextView)findViewById(R.id.version)).setText(version.toString() + " released " + releaseDate);
 		((TextView)findViewById(R.id.changelog)).setText(version.releaseNotes);
 
-		findViewById(download).setOnClickListener(new View.OnClickListener()
+		findViewById(R.id.download).setOnClickListener(new View.OnClickListener()
 		{
 			@Override public void onClick(View v)
 			{
@@ -72,6 +72,14 @@ public class DownloadActivity extends AppCompatActivity
 				v.setEnabled(false);
 
 				downloadAndInstall();
+			}
+		});
+
+		findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener()
+		{
+			@Override public void onClick(View v)
+			{
+				finish();
 			}
 		});
 	}
@@ -95,7 +103,7 @@ public class DownloadActivity extends AppCompatActivity
 				{
 					progress.setProgress(0);
 					Toast.makeText(progress.getContext(), "There was a problem downloading the update", Toast.LENGTH_SHORT).show();
-					findViewById(R.id.download).setEnabled(true);
+					findViewById(download).setEnabled(true);
 					findViewById(R.id.cancel).setVisibility(View.VISIBLE);
 				}
 			}
