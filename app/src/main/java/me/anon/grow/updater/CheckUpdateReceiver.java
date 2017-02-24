@@ -96,21 +96,55 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 			return null;
 		}
 
+		public boolean log(String log)
+		{
+			System.out.println(log);
+			return false;
+		}
+
 		public boolean newerThan(Version otherVersion)
 		{
-			if (this.major > otherVersion.major) return true;
-			if (this.minor > otherVersion.minor) return true;
-			if (this.hot > otherVersion.hot) return true;
-
-			if (this.type.equals("") && !otherVersion.type.equals("")) return true;
-
-			if (this.type.equals(otherVersion.type))
+			if (this.major > otherVersion.major)
 			{
-				// check iteration
-				if (this.iteration > otherVersion.iteration) return true;
+				return true;
+			}
+			else if (this.major == otherVersion.major)
+			{
+				if (this.minor > otherVersion.minor)
+				{
+					return true;
+				}
+				else if (this.minor == otherVersion.minor)
+				{
+					if (this.hot > otherVersion.hot)
+					{
+						return true;
+					}
+				}
+				else
+				{
+					return false;
+				}
 			}
 
-			if (this.type.equals("beta") && otherVersion.type.equals("alpha")) return true;
+			if (this.type.equals("") && !otherVersion.type.equals(""))
+			{
+				return true;
+			}
+			else
+			{
+				if (this.type.equals(otherVersion.type) && this.iteration > otherVersion.iteration)
+				{
+					return true;
+				}
+				else
+				{
+					if (this.type.equals("beta") && otherVersion.type.equals("alpha"))
+					{
+						return true;
+					}
+				}
+			}
 
 			return false;
 		}
@@ -137,19 +171,9 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 			return major + "." + minor + additional;
 		}
 
-		@Override public boolean equals(Object o)
+		public boolean equals(Version other)
 		{
-			if (this == o) return true;
-			if (!(o instanceof Version)) return false;
-
-			Version version = (Version)o;
-
-			if (major != version.major) return false;
-			if (minor != version.minor) return false;
-			if (hot != version.hot) return false;
-			if (iteration != version.iteration) return false;
-
-			return type != null ? type.equals(version.type) : version.type == null;
+			return toString().equals(other);
 		}
 	}
 
@@ -157,7 +181,7 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 	{
 		long lastChecked = getDefaultSharedPreferences(context).getLong("last_checked", 0);
 		long oneDay = TimeUnit.DAYS.toMillis(1);
-		final boolean force = intent.getExtras().containsKey("force");
+		final boolean force = intent.getExtras() != null && intent.getExtras().containsKey("force");
 		if (System.currentTimeMillis() - lastChecked > oneDay || force)
 		{
 			getDefaultSharedPreferences(context).edit()
@@ -243,7 +267,10 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 						{
 							@Override public int compare(Version o1, Version o2)
 							{
-								return o1.equals(o2) ? 0 : (o1.newerThan(o2) ? 1 : -1);
+								if (o2.newerThan(o1)) return 1;
+								if (o1.newerThan(o2)) return -1;
+
+								return 0;
 							}
 						});
 
