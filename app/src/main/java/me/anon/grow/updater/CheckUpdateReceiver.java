@@ -181,7 +181,7 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 	{
 		long lastChecked = getDefaultSharedPreferences(context).getLong("last_checked", 0);
 		long oneDay = TimeUnit.DAYS.toMillis(1);
-		final boolean force = true;//intent.getExtras().containsKey("force");
+		final boolean force = intent.getExtras() != null && intent.getExtras().containsKey("force");
 		if (System.currentTimeMillis() - lastChecked > oneDay || force)
 		{
 			getDefaultSharedPreferences(context).edit()
@@ -267,7 +267,10 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 						{
 							@Override public int compare(Version o1, Version o2)
 							{
-								return o1.equals(o2) ? 0 : (o1.newerThan(o2) ? 1 : -1);
+								if (o2.newerThan(o1)) return 1;
+								if (o1.newerThan(o2)) return -1;
+
+								return 0;
 							}
 						});
 
