@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen
+	xmlns:android="http://schemas.android.com/apk/res/android"
+>
+	<PreferenceCategory
+		android:title="General"
+	>
+		<Preference
+			android:key="last_checked"
+			android:title="Last checked"
+			android:summary="Tap to check now"
+		/>
+
+		<CheckBoxPreference
+			android:key="experimental"
+			android:title="Opt-in for experimental builds"
+			android:summary="Allow for alpha and beta builds to be downloaded"
+		/>
+	</PreferenceCategory>
+
+	<PreferenceCategory
+		android:title="About"
+	>
+		<Preference
+			android:key="about"
+			android:title="About"
+			android:summary="About the app"
+		/>
+	</PreferenceCategory>
+</PreferenceScreen>
