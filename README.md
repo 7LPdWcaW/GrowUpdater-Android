@@ -2,13 +2,15 @@
 
 Welcome to grow updater. This is an application addon for the [Grow Tracker](https://github.com/7LPdWcaW/GrowTracker-Android).
 
-This addon periodically checks for updates for the Grow Tracker application.
+This addon periodically (1 day, only checks when using GrowTracker) checks for updates for the Grow Tracker application.
 
-# Latest releases
+Downloaded updates are saved in `/sdcard/Download/`
+
+[Latest APK: (MD5) 4daf947e4009a8975d7a5fd7c4b8607c v1.0](https://github.com/7LPdWcaW/GrowUpdater-Android/raw/master/app/app-release.apk)
 
 # Installation
 
-Install the APK. You must have Grow Tracker version 2.2 or above, inside the Grow Tracker app, go to Settings from the sidebar, and you should see listed under `Addons` the addon. You can tap to configure the addon which you will need to do before it will begin syncing.
+Install the APK. You must have Grow Tracker version 2.2 or above, inside the Grow Tracker app, go to Settings from the sidebar, and you should see listed under `Addons` the addon. You can tap to configure the addon.
 
 ## How to install
 
