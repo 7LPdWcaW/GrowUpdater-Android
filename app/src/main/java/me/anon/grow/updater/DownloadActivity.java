@@ -5,7 +5,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.FileProvider;
@@ -23,6 +27,7 @@ import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
 import me.anon.grow.helper.PermissionHelper;
@@ -92,10 +97,12 @@ public class DownloadActivity extends AppCompatActivity
 			return;
 		}
 
+		File folder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
 		final ProgressBar progress = (ProgressBar)findViewById(R.id.progress);
 		AsyncHttpClient client = new AsyncHttpClient();
 		client.setUserAgent("Android/7LPdWcaW:GrowUpdater");
-		client.get(version.downloadUrl, new FileAsyncHttpResponseHandler(new File(getExternalCacheDir(), version.toString() + ".apk"))
+		client.get(version.downloadUrl, new FileAsyncHttpResponseHandler(new File(folder, version.toString() + ".apk"))
 		{
 			@Override public void onFailure(int statusCode, Header[] headers, Throwable throwable, File file)
 			{
@@ -121,9 +128,19 @@ public class DownloadActivity extends AppCompatActivity
 
 				registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
 
+				Uri uri = FileProvider.getUriForFile(DownloadActivity.this, getApplicationContext().getPackageName() + ".provider", getTargetFile());
+
 				Intent intent = new Intent(Intent.ACTION_VIEW);
-				intent.setDataAndType(FileProvider.getUriForFile(DownloadActivity.this, getApplicationContext().getPackageName() + ".provider", getTargetFile()), "application/vnd.android.package-archive");
+				intent.setDataAndType(uri, "application/vnd.android.package-archive");
 				intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+				List<ResolveInfo> resInfoList = getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+				for (ResolveInfo resolveInfo : resInfoList)
+				{
+					String packageName = resolveInfo.activityInfo.packageName;
+					grantUriPermission(packageName, uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+				}
+
 				startActivity(intent);
 			}
 
