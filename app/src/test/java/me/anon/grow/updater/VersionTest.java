@@ -42,7 +42,9 @@ public class VersionTest
 		versions.add(version1_3);
 		versions.add(version1_2);
 
-		Assert.assertFalse(version2_2.equals(version2_2_0));
+		Assert.assertFalse(version2_2.newerThan(version2_2));
+
+		Assert.assertTrue(version2_2.equals(version2_2_0));
 		Assert.assertFalse(version2_2.equals(version2_1));
 		Assert.assertFalse(version2_2.equals(version2_2_alpha1));
 		Assert.assertFalse(version2_2.equals(version1_2));
@@ -60,7 +62,6 @@ public class VersionTest
 			}
 		});
 
-		Assert.assertTrue(version2_2_alpha2.newerThan(version2_2_alpha1));
 		Assert.assertEquals(version2_2_1, versions.get(0));
 		Assert.assertEquals(version2_2, versions.get(1));
 		Assert.assertEquals(version2_2_0, versions.get(2));
@@ -73,6 +74,7 @@ public class VersionTest
 		Assert.assertEquals(version1_3, versions.get(9));
 		Assert.assertEquals(version1_2, versions.get(10));
 
+		Assert.assertTrue(version2_2_beta1.newerThan(version2_1));
 		Assert.assertFalse(version2_0.newerThan(version2_2_alpha1));
 		Assert.assertFalse(version1_2.newerThan(version2_2));
 		Assert.assertTrue(version2_2_1.newerThan(version1_2));
