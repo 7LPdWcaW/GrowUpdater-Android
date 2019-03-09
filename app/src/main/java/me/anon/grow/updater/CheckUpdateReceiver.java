@@ -104,6 +104,11 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 
 		public boolean newerThan(Version otherVersion)
 		{
+			if (toString().equalsIgnoreCase(otherVersion.toString()))
+			{
+				return false;
+			}
+
 			if (this.major > otherVersion.major)
 			{
 				return true;
@@ -112,13 +117,13 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 			{
 				if (this.minor > otherVersion.minor)
 				{
-					return true;
+					return !checkPreReleaseNewer(otherVersion);
 				}
 				else if (this.minor == otherVersion.minor)
 				{
 					if (this.hot > otherVersion.hot)
 					{
-						return true;
+						return !checkPreReleaseNewer(otherVersion);
 					}
 				}
 				else
@@ -133,16 +138,21 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 			}
 			else
 			{
-				if (this.type.equals(otherVersion.type) && this.iteration > otherVersion.iteration)
+				return checkPreReleaseNewer(otherVersion);
+			}
+		}
+
+		private boolean checkPreReleaseNewer(Version otherVersion)
+		{
+			if (this.type.equals(otherVersion.type) && this.iteration > otherVersion.iteration)
+			{
+				return true;
+			}
+			else
+			{
+				if (this.type.equals("beta") && otherVersion.type.equals("alpha"))
 				{
 					return true;
-				}
-				else
-				{
-					if (this.type.equals("beta") && otherVersion.type.equals("alpha"))
-					{
-						return true;
-					}
 				}
 			}
 
@@ -173,7 +183,7 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 
 		public boolean equals(Version other)
 		{
-			return toString().equals(other);
+			return toString().equals(other.toString());
 		}
 	}
 
