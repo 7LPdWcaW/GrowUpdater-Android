@@ -6,7 +6,7 @@ This addon periodically (1 day, only checks when using GrowTracker) checks for u
 
 Downloaded updates are saved in `/sdcard/Download/`
 
-[Latest APK: (MD5) 4daf947e4009a8975d7a5fd7c4b8607c v1.0](https://github.com/7LPdWcaW/GrowUpdater-Android/raw/master/app/app-release.apk)
+[Latest APK: (MD5) 41aad07b513ebdb052b36a14689b3eb7 v1.0.1](https://github.com/7LPdWcaW/GrowUpdater-Android/releases/download/v1.0.1/v1.0.1.apk)
 
 # Installation
 
