@@ -1,6 +1,7 @@
 package me.anon.grow.updater;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -9,7 +10,9 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import android.widget.Toast;
 
 import com.google.gson.JsonArray;
@@ -181,9 +184,14 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 			return major + "." + minor + additional;
 		}
 
-		public boolean equals(Version other)
+		@Override public boolean equals(Object o)
 		{
-			return toString().equals(other.toString());
+			return toString().equals(o.toString());
+		}
+
+		@Override public int hashCode()
+		{
+			return toString().hashCode();
 		}
 	}
 
@@ -331,15 +339,24 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 
 	private void sendUpdateNotification(Context context, Version release)
 	{
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+		{
+			int importance = NotificationManager.IMPORTANCE_DEFAULT;
+			NotificationChannel channel = new NotificationChannel("updater", "Updater", importance);
+			channel.setDescription("Displays notification when there is an update available");
+			NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+			notificationManager.createNotificationChannel(channel);
+		}
+
 		Intent downloadActivity = new Intent(context, DownloadActivity.class);
 		downloadActivity.putExtra("version", release);
 
 		PendingIntent downloadIntent = PendingIntent.getActivity(context, 0, downloadActivity, PendingIntent.FLAG_CANCEL_CURRENT);
 
-		Notification notification = new Notification.Builder(context)
+		Notification notification = new NotificationCompat.Builder(context, "updater")
 			.setContentTitle("There is an update available")
 			.setContentText("A newer version of GrowTracker is available to download")
-			.setStyle(new Notification.BigTextStyle()
+			.setStyle(new NotificationCompat.BigTextStyle()
 				.bigText("A newer version of GrowTracker is available to download"))
 			.setSmallIcon(R.mipmap.ic_notification)
 			.addAction(0, "Download & update", downloadIntent)
