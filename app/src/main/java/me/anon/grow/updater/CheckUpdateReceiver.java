@@ -181,9 +181,14 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 			return major + "." + minor + additional;
 		}
 
-		public boolean equals(Version other)
+		@Override public boolean equals(Object o)
 		{
-			return toString().equals(other.toString());
+			return toString().equals(o.toString());
+		}
+
+		@Override public int hashCode()
+		{
+			return toString().hashCode();
 		}
 	}
 
