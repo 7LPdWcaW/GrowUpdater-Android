@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+	<string-array name="frequency_entries">
+		<item>Hourly</item>
+		<item>Daily</item>
+		<item>Weekly</item>
+	</string-array>
+
+	<string-array name="frequency_values">
+		<item>3600000</item>
+		<item>86400000</item>
+		<item>604800000</item>
+	</string-array>
+</resources>

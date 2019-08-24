@@ -12,11 +12,12 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
+import android.text.TextUtils;
 import android.widget.Toast;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.loopj.android.http.AsyncHttpClient;
@@ -29,10 +30,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import androidx.core.app.NotificationCompat;
 import cz.msebera.android.httpclient.Header;
 
 import static android.preference.PreferenceManager.getDefaultSharedPreferences;
@@ -67,6 +68,29 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 
 		public static Version parse(String version)
 		{
+			if (version.equalsIgnoreCase("alpha"))
+			{
+				Version v = new Version();
+				v.major = -1;
+				v.minor = -1;
+				v.hot = -1;
+
+				v.type = "alpha";
+				v.iteration = 1;
+				return v;
+			}
+			else if (version.equalsIgnoreCase("beta"))
+			{
+				Version v = new Version();
+				v.major = -1;
+				v.minor = -1;
+				v.hot = -1;
+
+				v.type = "beta";
+				v.iteration = 1;
+				return v;
+			}
+
 			Pattern regex = Pattern.compile("v?([0-9]{1,2})(.?)([0-9]{1,2})((.?)([0-9]{1,2}))?(-([a-zA-Z]+)([0-9]+))?");
 			Matcher matcher = regex.matcher(version);
 
@@ -111,6 +135,8 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 			{
 				return false;
 			}
+
+			if (this.major == -1 && this.minor == -1 && this.hot == -1) return this.releaseDate > otherVersion.releaseDate;
 
 			if (this.major > otherVersion.major)
 			{
@@ -164,6 +190,11 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 
 		@Override public String toString()
 		{
+			if (major == -1 && minor == -1 && hot == -1)
+			{
+				return type + " Nightly build";
+			}
+
 			String additional = "";
 
 			if (hot > 0)
@@ -198,9 +229,19 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 	@Override public void onReceive(final Context context, Intent intent)
 	{
 		long lastChecked = getDefaultSharedPreferences(context).getLong("last_checked", 0);
-		long oneDay = TimeUnit.DAYS.toMillis(1);
+		String frequency = getDefaultSharedPreferences(context).getString("check_frequency", "3600000");
+		long freqInt = 0;
+		try
+		{
+			freqInt = Long.parseLong(frequency);
+		}
+		catch (NumberFormatException e)
+		{
+			e.printStackTrace();
+		}
+
 		final boolean force = intent.getExtras() != null && intent.getExtras().containsKey("force");
-		if (System.currentTimeMillis() - lastChecked > oneDay || force)
+		if (System.currentTimeMillis() - lastChecked > freqInt || force)
 		{
 			getDefaultSharedPreferences(context).edit()
 				.putLong("last_checked", System.currentTimeMillis())
@@ -219,7 +260,6 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 				packageInfo = packageManager.getPackageInfo("me.anon.grow", 0);
 			}
 			catch (Exception e){}
-
 			final int versionCode = packageInfo == null ? 0 : packageInfo.versionCode;
 			final String versionName = packageInfo == null ? "0.0" : packageInfo.versionName;
 			final Version currentVersion = Version.parse(versionName);
@@ -236,6 +276,7 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 				if (ai.metaData != null)
 				{
 					currentVersion.appType = ai.metaData.getString("me.anon.grow.APP_TYPE", "original");
+					currentVersion.releaseDate = Long.parseLong(ai.metaData.getString("me.anon.grow.VERSION_DATE", "" + System.currentTimeMillis()));
 				}
 			}
 			catch (PackageManager.NameNotFoundException e)
@@ -261,7 +302,18 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 					for (JsonElement element : jsonArray)
 					{
 						JsonObject jsonObject = element.getAsJsonObject();
-						Version releaseVersion = Version.parse(jsonObject.get("name").getAsString());
+						String name = "";
+
+						if (jsonObject.get("name") != JsonNull.INSTANCE && !TextUtils.isEmpty(jsonObject.get("name").getAsString()))
+						{
+							name = jsonObject.get("name").getAsString();
+						}
+						else
+						{
+							name = jsonObject.get("tag_name").getAsString();
+						}
+
+						Version releaseVersion = Version.parse(name);
 
 						if (releaseVersion != null)
 						{
@@ -275,7 +327,11 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 								e.printStackTrace();
 							}
 
-							releaseVersion.releaseNotes = jsonObject.get("body").getAsString();
+							releaseVersion.releaseNotes = "";
+							if (jsonObject.get("body") != JsonNull.INSTANCE)
+							{
+								releaseVersion.releaseNotes = jsonObject.get("body").getAsString();
+							}
 
 							for (JsonElement assets : jsonObject.get("assets").getAsJsonArray())
 							{
@@ -303,27 +359,42 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 						}
 					});
 
-					Version latest = releases.get(0);
-					Version latestStable = releases.get(0);
+					Version latest = null;
+					Version latestBeta = null;
+					Version latestStable = null;
 
 					for (Version release : releases)
 					{
-						if (release.type.equals(""))
+						if (release.type.equals("") && latestStable == null)
 						{
 							latestStable = release;
-							break;
+						}
+						else if (release.type.equals("alpha") && latest == null)
+						{
+							latest = release;
+						}
+						else if (release.type.equals("beta") && latestBeta == null)
+						{
+							latestBeta = release;
 						}
 					}
 
 					boolean experimental = PreferenceManager.getDefaultSharedPreferences(context).getBoolean("experimental", false);
-					if ((!latest.type.equals("") && experimental && latest.newerThan(currentVersion))
-					|| latestStable.newerThan(currentVersion))
+					boolean beta = PreferenceManager.getDefaultSharedPreferences(context).getBoolean("beta", false);
+
+					if (context == null) return;
+
+					if (experimental && latest.newerThan(currentVersion))
 					{
-						// send notification
-						if (context != null)
-						{
-							sendUpdateNotification(context, experimental ? latest : latestStable);
-						}
+						sendUpdateNotification(context, latest);
+					}
+					else if (beta && latest.newerThan(currentVersion))
+					{
+						sendUpdateNotification(context, latestBeta);
+					}
+					else if (latest != null && latest.newerThan(currentVersion))
+					{
+						sendUpdateNotification(context, latest);
 					}
 					else
 					{
