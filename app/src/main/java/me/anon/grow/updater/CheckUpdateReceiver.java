@@ -276,7 +276,7 @@ public class CheckUpdateReceiver extends BroadcastReceiver
 				if (ai.metaData != null)
 				{
 					currentVersion.appType = ai.metaData.getString("me.anon.grow.APP_TYPE", "original");
-					currentVersion.releaseDate = Long.parseLong(ai.metaData.getString("me.anon.grow.VERSION_DATE", "" + System.currentTimeMillis()));
+					currentVersion.releaseDate = Long.parseLong(ai.metaData.getString("me.anon.grow.VERSION_DATE", "0"));
 				}
 			}
 			catch (PackageManager.NameNotFoundException e)
