@@ -12,10 +12,25 @@
 			android:summary="Tap to check now"
 		/>
 
+		<ListPreference
+			android:key="check_frequency"
+			android:title="Maximum check frequency"
+			android:summary="How often to allow to check - Only triggers when inside GrowTracker. Currently %s"
+			android:entries="@array/frequency_entries"
+			android:entryValues="@array/frequency_values"
+			android:defaultValue="3600000"
+		/>
+
+		<CheckBoxPreference
+			android:key="beta"
+			android:title="Opt-in for beta builds"
+			android:summary="Allow for beta builds to be downloaded"
+		/>
+
 		<CheckBoxPreference
 			android:key="experimental"
-			android:title="Opt-in for experimental builds"
-			android:summary="Allow for alpha and beta builds to be downloaded"
+			android:title="Opt-in for experimental develop builds"
+			android:summary="Allow for alpha builds to be downloaded - WARNING: EXPERIMENTAL!"
 		/>
 	</PreferenceCategory>
 
